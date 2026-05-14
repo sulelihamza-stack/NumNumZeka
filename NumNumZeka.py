@@ -1,10 +1,53 @@
 import streamlit as st
 import random
 import math
+import time
+import json
+import os
+from datetime import datetime
 
-st.set_page_config(page_title="NumNum Zeka", page_icon="🎯")
+# ============================================================
+# SAYFA YAPILANDIRMASI
+# ============================================================
+st.set_page_config(
+    page_title="NumNum Zeka - 7. Sınıf Tüm Dersler", 
+    page_icon="🎯", 
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Özel CSS ile görünüm iyileştirme
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #f5f7fb;
+    }
+    .stButton button {
+        background-color: #4CAF50;
+        color: white;
+        font-weight: bold;
+        border-radius: 10px;
+        transition: all 0.3s;
+    }
+    .stButton button:hover {
+        background-color: #45a049;
+        transform: scale(1.02);
+    }
+    .chat-message {
+        padding: 15px;
+        border-radius: 15px;
+        margin-bottom: 10px;
+    }
+</style>
+""", unsafe_allow_html=True)
+
 st.title("🎯 NumNum Zeka - 7. Sınıf Tüm Dersler")
+st.markdown("### *Müfredata %100 Uygun | Dinamik Soru Üreteci | Sonsuz Havuz*")
+st.markdown("---")
 
+# ============================================================
+# OTURUM DURUMU (SESSION STATE) - TÜM DEĞİŞKENLER
+# ============================================================
 if "mesajlar" not in st.session_state:
     st.session_state.mesajlar = []
 if "aktif_soru" not in st.session_state:
@@ -12,116 +55,278 @@ if "aktif_soru" not in st.session_state:
     st.session_state.aktif_cevap = None
     st.session_state.aktif_siklar = None
     st.session_state.secili_ders = None
+    st.session_state.secili_konu = None
     st.session_state.puan = 0
     st.session_state.dogru = 0
     st.session_state.yanlis = 0
+    st.session_state.oturum_baslangic = datetime.now()
+    st.session_state.tarihce = []
+    st.session_state.basari_yuzdesi = 0
+    st.session_state.soru_sayisi = 0
+    st.session_state.son_10_dogru = []
+    st.session_state.aktif_tema = "açık"
 
-# ========== MATEMATİK (12 KONU) ==========
+# ============================================================
+# YARDIMCI FONKSİYONLAR
+# ============================================================
+
+def update_stats(is_correct):
+    """İstatistikleri güncelle"""
+    if is_correct:
+        st.session_state.dogru += 1
+        st.session_state.puan += 10
+        st.session_state.son_10_dogru.append(1)
+    else:
+        st.session_state.yanlis += 1
+        st.session_state.son_10_dogru.append(0)
+    
+    st.session_state.soru_sayisi += 1
+    
+    if len(st.session_state.son_10_dogru) > 10:
+        st.session_state.son_10_dogru.pop(0)
+    
+    if st.session_state.soru_sayisi > 0:
+        st.session_state.basari_yuzdesi = (st.session_state.dogru / st.session_state.soru_sayisi) * 100
+    
+    st.session_state.tarihce.append({
+        "zaman": datetime.now(),
+        "sonuc": is_correct,
+        "ders": st.session_state.secili_ders,
+        "konu": st.session_state.secili_konu
+    })
+
+def get_basari_seviyesi():
+    """Başarı seviyesine göre mesaj döndür"""
+    yuzde = st.session_state.basari_yuzdesi
+    if yuzde >= 90:
+        return "🏆 Mükemmel! Üstün başarı gösteriyorsun!"
+    elif yuzde >= 75:
+        return "🌟 Çok iyi! Bu şekilde devam et!"
+    elif yuzde >= 60:
+        return "📈 İyi gidiyorsun! Daha da yükselebilirsin!"
+    elif yuzde >= 40:
+        return "📚 İyi bir başlangıç! Daha çok pratik yap!"
+    else:
+        return "💪 Yeni başlıyorsun! Bol bol soru çöz!"
+
+# ============================================================
+# MATEMATİK - 12 KONU (ÇOK TİPLİ DİNAMİK SORULAR)
+# ============================================================
 
 def mat_tam_sayilar():
-    tip = random.choice([1,2,3,4,5,6])
+    """Tam Sayılarla İşlemler - 8 farklı soru tipi"""
+    tip = random.choice([1,2,3,4,5,6,7,8])
+    
     if tip == 1:
-        b = random.randint(-60,-10); t = b; h = []
-        for _ in range(random.randint(4,7)):
-            a = random.randint(5,40)
-            if random.choice(["yükseliyor","dalıyor"]) == "yükseliyor":
-                t += a; h.append(f"{a} m yükseliyor")
+        # Tip 1: Dalgıç sorusu
+        baslangic = random.randint(-60, -10)
+        toplam = baslangic
+        hareketler = []
+        for _ in range(random.randint(4, 8)):
+            adim = random.randint(5, 45)
+            yon = random.choice(["yükseliyor", "dalıyor"])
+            if yon == "yükseliyor":
+                toplam += adim
+                hareketler.append(f"{adim} m yükseliyor")
             else:
-                t -= a; h.append(f"{a} m dalıyor")
-        m = f"Bir dalgıç deniz seviyesinden **{b} m**'de iken " + ", ".join(h) + f".\n\n**Son konum kaç metredir?**"; d = str(t)
+                toplam -= adim
+                hareketler.append(f"{adim} m dalıyor")
+        metin = f"🐟 **Dalgıç Problemi**\n\nBir dalgıç deniz seviyesinden **{baslangic} metre** derinlikte iken sırasıyla: " + ", ".join(hareketler) + f".\n\n**Dalgıcın son konumu deniz seviyesine göre kaç metredir?**"
+        dogru = str(toplam)
+    
     elif tip == 2:
-        b = random.randint(-20,-5); t = b; h = []
-        for _ in range(random.randint(4,7)):
-            a = random.randint(5,30)
-            if random.choice(["+","-"]) == "+":
-                t += a; h.append(f"{a}°C artıyor")
+        # Tip 2: Termometre sorusu
+        baslangic = random.randint(-20, -5)
+        toplam = baslangic
+        olaylar = []
+        for _ in range(random.randint(4, 7)):
+            degisim = random.randint(5, 30)
+            yon = random.choice(["artıyor", "düşüyor"])
+            if yon == "artıyor":
+                toplam += degisim
+                olaylar.append(f"{degisim}°C artıyor")
             else:
-                t -= a; h.append(f"{a}°C düşüyor")
-        m = f"Termometre **{b}°C**'yi gösteriyor. " + ", ".join(h) + f".\n\n**Son sıcaklık kaç °C?**"; d = str(t)
+                toplam -= degisim
+                olaylar.append(f"{degisim}°C düşüyor")
+        metin = f"🌡️ **Sıcaklık Değişimi**\n\nBir termometre sabah **{baslangic}°C**'yi gösteriyor. Gün içinde sırasıyla: " + ", ".join(olaylar) + f".\n\n**Termometre gün sonunda kaç °C'yi gösterir?**"
+        dogru = str(toplam)
+    
     elif tip == 3:
-        s = random.randint(-50,50); t = s; h = []
-        for _ in range(random.randint(4,7)):
-            a = random.randint(5,40)
-            if random.choice(["+","-"]) == "+":
-                t += a; h.append(f"+{a}")
+        # Tip 3: Hesap makinesi
+        sayi = random.randint(-50, 50)
+        toplam = sayi
+        islemler = []
+        for _ in range(random.randint(4, 7)):
+            adim = random.randint(5, 40)
+            yon = random.choice(["+", "-"])
+            if yon == "+":
+                toplam += adim
+                islemler.append(f"+{adim}")
             else:
-                t -= a; h.append(f"-{a}")
-        m = f"Ekranda **{s}** yazıyor. " + ", ".join(h) + f" tuşlanıyor.\n\n**Sonuç kaç?**"; d = str(t)
+                toplam -= adim
+                islemler.append(f"-{adim}")
+        metin = f"📱 **Hesap Makinesi**\n\nBir hesap makinesinde ekranda **{sayi}** yazmaktadır. Sırasıyla " + ", ".join(islemler) + f" tuşlarına basılıyor.\n\n**Ekrandaki son sayı kaçtır?**"
+        dogru = str(toplam)
+    
     elif tip == 4:
-        b = random.randint(-5,5); t = b; h = []
-        for _ in range(random.randint(4,7)):
-            k = random.randint(3,12)
-            if random.choice(["yukarı","aşağı"]) == "yukarı":
-                t += k; h.append(f"{k} kat yukarı")
+        # Tip 4: Asansör
+        baslangic = random.randint(-5, 5)
+        toplam = baslangic
+        katlar = []
+        for _ in range(random.randint(4, 7)):
+            adim = random.randint(3, 12)
+            yon = random.choice(["yukarı", "aşağı"])
+            if yon == "yukarı":
+                toplam += adim
+                katlar.append(f"{adim} kat yukarı")
             else:
-                t -= k; h.append(f"{k} kat aşağı")
-        m = f"Asansör **{b}. katta** iken " + ", ".join(h) + f".\n\n**Son kat?**"; d = str(t)
+                toplam -= adim
+                katlar.append(f"{adim} kat aşağı")
+        metin = f"🏢 **Asansör Problemi**\n\nBir asansör zemin kata göre **{baslangic}. katta** iken sırasıyla: " + ", ".join(katlar) + f" hareket ediyor.\n\n**Asansör son durumda kaçıncı kattadır?**"
+        dogru = str(toplam)
+    
+    elif tip == 5:
+        # Tip 5: Banka hesabı
+        baslangic = random.randint(200, 1000)
+        toplam = baslangic
+        islemler = []
+        for _ in range(random.randint(4, 7)):
+            miktar = random.randint(50, 300)
+            yon = random.choice(["yatırıyor", "çekiyor"])
+            if yon == "yatırıyor":
+                toplam += miktar
+                islemler.append(f"{miktar} TL yatırıyor")
+            else:
+                toplam -= miktar
+                islemler.append(f"{miktar} TL çekiyor")
+        metin = f"💰 **Banka Hesabı**\n\nBir hesapta başlangıçta **{baslangic} TL** bulunmaktadır. Hesap sahibi sırasıyla: " + ", ".join(islemler) + f".\n\n**Son durumda hesapta kaç TL vardır?**"
+        dogru = str(toplam)
+    
+    elif tip == 6:
+        # Tip 6: Dağcı
+        baslangic = random.randint(500, 2500)
+        toplam = baslangic
+        hareketler = []
+        for _ in range(random.randint(4, 7)):
+            mesafe = random.randint(100, 600)
+            yon = random.choice(["tırmanıyor", "iniyor"])
+            if yon == "tırmanıyor":
+                toplam += mesafe
+                hareketler.append(f"{mesafe} m tırmanıyor")
+            else:
+                toplam -= mesafe
+                hareketler.append(f"{mesafe} m iniyor")
+        metin = f"⛰️ **Dağcı Problemi**\n\nBir dağcı deniz seviyesinden **+{baslangic} metre** yükseklikteki kamp alanından tırmanışa başlıyor. Sırasıyla: " + ", ".join(hareketler) + f".\n\n**Dağcının son yüksekliği kaç metredir?**"
+        dogru = str(toplam)
+    
+    elif tip == 7:
+        # Tip 7: Maaş zammı
+        baslangic = random.randint(2500, 4000)
+        toplam = baslangic
+        zam_miktar = random.randint(150, 400)
+        ay_sayisi = random.randint(3, 6)
+        for _ in range(ay_sayisi):
+            toplam += zam_miktar
+        metin = f"💼 **Maaş Zammı**\n\nBir işçinin başlangıç maaşı **{baslangic} TL**'dir. Her ay **{zam_miktar} TL** zam almaktadır.\n\n**{ay_sayisi} ay sonunda işçinin maaşı kaç TL olur?**"
+        dogru = str(toplam)
+    
     else:
-        b = random.randint(200,1000); t = b; h = []
-        for _ in range(random.randint(4,7)):
-            miktar = random.randint(50,300)
-            if random.choice(["yatırıyor","çekiyor"]) == "yatırıyor":
-                t += miktar; h.append(f"{miktar} TL yatırıyor")
-            else:
-                t -= miktar; h.append(f"{miktar} TL çekiyor")
-        m = f"Hesapta **{b} TL** var. " + ", ".join(h) + f".\n\n**Son bakiye kaç TL?**"; d = str(t)
-    y = set()
-    while len(y) < 3:
-        sapma = random.choice([-12,-9,-7,-5,5,7,9,12])
-        yd = int(d) + sapma
-        if yd != int(d):
-            y.add(str(yd))
-    s = [d] + list(y)
-    random.shuffle(s)
-    return m, d, s
+        # Tip 8: Oyun puanı
+        baslangic = random.randint(100, 500)
+        toplam = baslangic
+        hamle_sayisi = random.randint(4, 8)
+        for _ in range(hamle_sayisi):
+            puan = random.randint(15, 50)
+            if random.choice([True, False]):
+                toplam += puan
+        metin = f"🎮 **Oyun Skoru**\n\nBir oyuncu yarışmaya **{baslangic} puan** ile başlıyor. {hamle_sayisi} hamle sonucunda puan kazanıp kaybediyor.\n\n**Oyuncunun son puanı kaçtır?**"
+        dogru = str(toplam)
+    
+    # Şıkları oluştur
+    yanlisler = set()
+    while len(yanlisler) < 3:
+        sapma = random.choice([-12, -9, -7, -5, 5, 7, 9, 12])
+        y = int(dogru) + sapma
+        if y != int(dogru):
+            yanlisler.add(str(y))
+    siklar = [dogru] + list(yanlisler)
+    random.shuffle(siklar)
+    
+    return metin, dogru, siklar
 
 def mat_rasyonel():
-    tip = random.choice([1,2,3,4])
+    """Rasyonel Sayılar - 6 farklı soru tipi"""
+    tip = random.choice([1, 2, 3, 4, 5, 6])
+    
     if tip == 1:
-        p1 = random.randint(1,12); pd1 = random.randint(2,12)
-        p2 = random.randint(1,12); pd2 = random.randint(2,12)
-        if p1/pd1 > p2/pd2: d = ">"
-        elif p1/pd1 < p2/pd2: d = "<"
-        else: d = "="
-        m = f"{p1}/{pd1} __ {p2}/{pd2} yerine hangi işaret gelir?"
-        s = [">", "<", "=", "≠"]
-        random.shuffle(s)
-        return m, d, s
+        p1 = random.randint(1, 12); pd1 = random.randint(2, 12)
+        p2 = random.randint(1, 12); pd2 = random.randint(2, 12)
+        if p1/pd1 > p2/pd2:
+            dogru = ">"
+        elif p1/pd1 < p2/pd2:
+            dogru = "<"
+        else:
+            dogru = "="
+        metin = f"📊 **Kesir Karşılaştırma**\n\n{p1}/{pd1} __ {p2}/{pd2} ifadesinde boşluğa hangi işaret gelmelidir?"
+        siklar = [">", "<", "=", "≠"]
+        random.shuffle(siklar)
+        return metin, dogru, siklar
+    
     elif tip == 2:
-        p = random.randint(1,12); pd = random.randint(2,12)
-        v = p/pd; d = f"{v:.2f}"
-        m = f"{p}/{pd} rasyonel sayısının ondalık gösterimi (2 basamak) nedir?"
-        y = [f"{v+0.1:.2f}", f"{v-0.1:.2f}", f"{v+0.05:.2f}"]
-        s = [d] + y
-        random.shuffle(s)
-        return m, d, s
+        p = random.randint(1, 12); pd = random.randint(2, 12)
+        v = p/pd; dogru = f"{v:.2f}"
+        metin = f"🔢 **Kesir - Ondalık Dönüşüm**\n\n{p}/{pd} rasyonel sayısının ondalık gösterimi (virgülden sonra 2 basamak) nedir?"
+        yanlis = [f"{v+0.1:.2f}", f"{v-0.1:.2f}", f"{v+0.05:.2f}"]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
+    
     elif tip == 3:
-        p = random.randint(1,8); pd = random.randint(2,8)
-        m = f"Bir pastanın {p}/{pd}'i yenmiş. Kalan 6 kişiye eşit paylaştırılıyor.\n\n**Herkes pastanın kaçta kaçını alır?**"
-        k = 1 - (p/pd); son = k/6
+        p = random.randint(1, 8); pd = random.randint(2, 8)
+        metin = f"🍰 **Kesir Problemleri**\n\nBir pastanın {p}/{pd}'i yenmiştir. Geriye kalan pasta 6 kişiye eşit olarak paylaştırılıyor.\n\n**Her bir kişi pastanın kaçta kaçını alır?**"
+        kalan = 1 - (p/pd); son = kalan/6
         pay = int(son*100); payda = 100
-        for i in range(2,20):
-            if pay%i==0 and payda%i==0:
-                pay//=i; payda//=i
-        d = f"{pay}/{payda}" if payda!=1 else str(pay)
-        y = [f"{pay+1}/{payda}", f"{pay-1}/{payda}", f"{pay}/{payda+1}"]
-        s = [d] + y
-        random.shuffle(s)
-        return m, d, s
+        for i in range(2, 20):
+            if pay % i == 0 and payda % i == 0:
+                pay //= i; payda //= i
+        dogru = f"{pay}/{payda}" if payda != 1 else str(pay)
+        yanlis = [f"{pay+1}/{payda}", f"{pay-1}/{payda}", f"{pay}/{payda+1}"]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
+    
+    elif tip == 4:
+        p = random.randint(1, 9); pd = random.randint(2, 9)
+        carp = random.randint(2, 5)
+        metin = f"📐 **Kesir Genişletme**\n\n{p}/{pd} kesrini {carp} ile genişlettiğimizde oluşan yeni kesrin pay ve paydasının **toplamı** kaçtır?"
+        yeni_pay = p * carp; yeni_payda = pd * carp
+        dogru = str(yeni_pay + yeni_payda)
+        yanlis = [str(int(dogru)+random.randint(5,15)), str(int(dogru)-random.randint(5,15)), str(int(dogru)+random.randint(1,4))]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
+    
     else:
-        p = random.randint(1,9); pd = random.randint(2,9)
-        m = f"{p}/{pd} kesrini {random.randint(2,5)} ile genişletince oluşan kesrin pay ve paydası toplamı kaç?"
-        carp = random.randint(2,5); yp = p*carp; ypd = pd*carp
-        d = str(yp + ypd)
-        y = [str(int(d)+random.randint(5,15)), str(int(d)-random.randint(5,15)), str(int(d)+random.randint(1,4))]
-        s = [d] + y
-        random.shuffle(s)
-        return m, d, s
+        p1 = random.randint(1, 10); pd1 = random.randint(2, 10)
+        p2 = random.randint(1, 10); pd2 = random.randint(2, 10)
+        metin = f"📏 **Kesirler Arası Uzaklık**\n\n{p1}/{pd1} ile {p2}/{pd2} kesirleri arasındaki farkın mutlak değeri nedir? (Kesir olarak sadeleştiriniz)"
+        fark = abs(p1/pd1 - p2/pd2)
+        pay = int(fark * 100); payda = 100
+        for i in range(2, 20):
+            if pay % i == 0 and payda % i == 0:
+                pay //= i; payda //= i
+        dogru = f"{pay}/{payda}" if payda != 1 else str(pay)
+        yanlis = [f"{pay+1}/{payda}", f"{pay-1}/{payda}", f"{pay}/{payda+1}"]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
 
 def mat_rasyonel_islem():
-    p1 = random.randint(1,8); pd1 = random.randint(2,8)
-    p2 = random.randint(1,8); pd2 = random.randint(2,8)
-    islem = random.choice(["+","-","x","/"])
+    """Rasyonel Sayılarla İşlemler - 5 tip"""
+    p1 = random.randint(1, 8); pd1 = random.randint(2, 8)
+    p2 = random.randint(1, 8); pd2 = random.randint(2, 8)
+    islem = random.choice(["+", "-", "x", "/"])
+    
     if islem == "+":
         sp = p1*pd2 + p2*pd1; spd = pd1*pd2
     elif islem == "-":
@@ -130,304 +335,220 @@ def mat_rasyonel_islem():
         sp = p1*p2; spd = pd1*pd2
     else:
         sp = p1*pd2; spd = pd1*p2
+    
     eb = math.gcd(sp, spd); sp //= eb; spd //= eb
-    d = f"{sp}/{spd}" if spd!=1 else str(sp)
-    m = f"{p1}/{pd1} {islem} {p2}/{pd2} işleminin sonucu (sadeleştirilmiş) nedir?"
-    y = [f"{sp+1}/{spd}", f"{sp-1}/{spd}", f"{sp}/{spd+1}"]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
+    dogru = f"{sp}/{spd}" if spd != 1 else str(sp)
+    metin = f"🧮 **Kesir İşlemleri**\n\n{p1}/{pd1} {islem} {p2}/{pd2} işleminin sonucu nedir? (Sadeleştirilmiş kesir olarak yazınız)"
+    yanlis = [f"{sp+1}/{spd}", f"{sp-1}/{spd}", f"{sp}/{spd+1}"]
+    siklar = [dogru] + yanlis
+    random.shuffle(siklar)
+    return metin, dogru, siklar
 
 def mat_cebirsel():
-    tip = random.choice([1,2,3,4])
+    """Cebirsel İfadeler - 4 tip"""
+    tip = random.choice([1, 2, 3, 4])
+    
     if tip == 1:
-        a = random.randint(1,5); b = random.randint(-8,8)
-        c = random.randint(1,5); d = random.randint(-8,8)
-        islem = random.choice(["+","-"])
-        if islem == "+": son = f"{a+c}x + {b+d}"
-        else: son = f"{a-c}x + {b-d}"
-        m = f"**({a}x {b:+#d}) {islem} ({c}x {d:+#d})** işleminin en sade hali?"
-        y = [f"{a+c+1}x + {b+d}", f"{a+c}x + {b+d+1}", f"{a+c-1}x + {b+d}"]
-        s = [son] + y
-        random.shuffle(s)
-        return m, son, s
+        a = random.randint(1, 5); b = random.randint(-8, 8)
+        c = random.randint(1, 5); d = random.randint(-8, 8)
+        islem = random.choice(["+", "-"])
+        if islem == "+":
+            sonuc = f"{a+c}x + {b+d}"
+        else:
+            sonuc = f"{a-c}x + {b-d}"
+        metin = f"📐 **Cebirsel Toplama/Çıkarma**\n\n**({a}x {b:+#d}) {islem} ({c}x {d:+#d})** işleminin en sade hali aşağıdakilerden hangisidir?"
+        yanlis = [f"{a+c+1}x + {b+d}", f"{a+c}x + {b+d+1}", f"{a+c-1}x + {b+d}"]
+        siklar = [sonuc] + yanlis
+        random.shuffle(siklar)
+        return metin, sonuc, siklar
+    
     elif tip == 2:
-        a = random.randint(2,6); b = random.randint(1,10); x = random.randint(1,5)
-        son = a*x + b; d = str(son)
-        m = f"{a}x + {b} ifadesinin x={x} için değeri kaçtır?"
-        y = [str(son+random.randint(2,6)), str(son-random.randint(2,6)), str(son+random.randint(1,2))]
-        s = [d] + y
-        random.shuffle(s)
-        return m, d, s
+        a = random.randint(2, 6); b = random.randint(1, 10); x_val = random.randint(1, 5)
+        sonuc = a*x_val + b
+        dogru = str(sonuc)
+        metin = f"🔢 **Cebirsel İfade Değeri**\n\n{a}x + {b} cebirsel ifadesinin **x = {x_val}** için değeri kaçtır?"
+        yanlis = [str(sonuc+random.randint(2,6)), str(sonuc-random.randint(2,6)), str(sonuc+random.randint(1,2))]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
+    
     else:
-        a = random.randint(2,5); b = random.randint(1,8)
-        d = f"{4*a}x + {4*b}"
-        m = f"Bir kenarı ({a}x+{b}) cm olan karenin çevresi kaç cm'dir?"
-        y = [f"{4*a+1}x + {4*b}", f"{4*a}x + {4*b+1}", f"{4*a-1}x + {4*b}"]
-        s = [d] + y
-        random.shuffle(s)
-        return m, d, s
+        a = random.randint(2, 5); b = random.randint(1, 8)
+        dogru = f"{4*a}x + {4*b}"
+        metin = f"📏 **Geometrik Cebir**\n\nBir kenar uzunluğu **({a}x+{b}) cm** olan karenin **çevresi** kaç cm'dir?"
+        yanlis = [f"{4*a+1}x + {4*b}", f"{4*a}x + {4*b+1}", f"{4*a-1}x + {4*b}"]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
 
 def mat_denklem():
-    a = random.randint(2,6); b = random.randint(2,15)
-    c = random.randint(2,6); d = random.randint(2,15)
-    if a == c: a = c+1
-    coz = (d-b)/(a-c)
-    d_str = str(int(coz)) if coz==int(coz) else f"{coz:.1f}"
-    m = f"{a}x + {b} = {c}x + {d} denkleminin çözümü kaçtır?"
-    y = set()
-    while len(y) < 3:
-        s = random.choice([-3,-2,2,3,-5,5])
-        yd = int(d_str) + s if d_str.isdigit() else float(d_str) + s
-        y.add(str(int(yd)) if yd==int(yd) else f"{yd:.1f}")
-    s = [d_str] + list(y)
-    random.shuffle(s)
-    return m, d_str, s
+    """Eşitlik ve Denklem - 4 tip"""
+    tip = random.choice([1, 2, 3, 4])
+    
+    if tip == 1:
+        a = random.randint(2, 6); b = random.randint(2, 15)
+        c = random.randint(2, 6); d = random.randint(2, 15)
+        if a == c: a = c+1
+        cozum = (d-b)/(a-c)
+        dogru = str(int(cozum)) if cozum == int(cozum) else f"{cozum:.1f}"
+        metin = f"⚖️ **Denklem Çözme**\n\n{a}x + {b} = {c}x + {d} denklemini sağlayan **x** değeri kaçtır?"
+    
+    elif tip == 2:
+        a = random.randint(2, 7); b = random.randint(1, 10)
+        c = random.randint(2, 7); d = random.randint(1, 8)
+        # a(x - b) = cx + d
+        cozum = (a*b + d) / (a - c) if a != c else random.randint(1, 10)
+        dogru = str(int(cozum)) if cozum == int(cozum) else f"{cozum:.1f}"
+        metin = f"🔓 **Parantezli Denklem**\n\n{a}(x - {b}) = {c}x + {d} denkleminin çözümü kaçtır?"
+    
+    elif tip == 3:
+        a = random.randint(1, 5); b = random.randint(1, 10)
+        metin = f"💭 **Sözel Problem**\n\nBir sayının {a} katının {b} fazlası, aynı sayının {a+1} katına eşittir.\n\n**Bu sayı kaçtır?**"
+        dogru = str(b)
+    
+    else:
+        a = random.randint(2, 6); b = random.randint(1, 12); c = random.randint(2, 5)
+        # (x + a)/b = c
+        cozum = c*b - a
+        dogru = str(cozum)
+        metin = f"📖 **Kesirli Denklem**\n\n(x + {a}) / {b} = {c} denkleminin çözümü kaçtır?"
+    
+    yanlisler = set()
+    while len(yanlisler) < 3:
+        sapma = random.choice([-3, -2, 2, 3, -5, 5])
+        y = int(dogru) + sapma if dogru.isdigit() else float(dogru) + sapma
+        yanlisler.add(str(int(y)) if y == int(y) else f"{y:.1f}")
+    siklar = [dogru] + list(yanlisler)
+    random.shuffle(siklar)
+    return metin, dogru, siklar
 
 def mat_oran():
-    a = random.randint(2,10); b = random.randint(2,10); k = random.randint(2,6)
-    x = b*k; d = str(x)
-    m = f"{a}/{b} = {a*k}/x orantısında x kaçtır?"
-    y = [str(x+random.randint(1,3)), str(x-random.randint(1,3)), str(x+random.randint(4,6))]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
+    """Oran ve Orantı - 4 tip"""
+    tip = random.choice([1, 2, 3, 4])
+    
+    if tip == 1:
+        a = random.randint(2, 10); b = random.randint(2, 10); k = random.randint(2, 6)
+        x = b * k
+        dogru = str(x)
+        metin = f"🔄 **Doğru Orantı**\n\n{a}/{b} = {a*k}/x orantısında **x** kaçtır?"
+    
+    elif tip == 2:
+        a = random.randint(2, 8); b = random.randint(2, 8)
+        c = random.randint(2, 8); d = random.randint(2, 8)
+        # a/b = a/b, b/c = b/c ise a/c = ?
+        dogru = f"{a}/{c}"
+        metin = f"📊 **Zincir Orantı**\n\na/b = {a}/{b} ve b/c = {b}/{c} ise **a/c** oranı kaçtır?"
+        yanlis = [f"{a+1}/{c}", f"{a}/{c+1}", f"{a-1}/{c}"]
+        siklar = [dogru] + yanlis
+        random.shuffle(siklar)
+        return metin, dogru, siklar
+    
+    else:
+        k = random.randint(3, 8); e = random.randint(3, 8); toplam = random.randint(40, 80)
+        kiz = int(k / (k+e) * toplam)
+        dogru = str(kiz)
+        metin = f"👥 **Sınıf Problemi**\n\nBir sınıfta kızların erkeklere oranı {k}/{e}'tir. Sınıf mevcudu **{toplam}** olduğuna göre **kız sayısı** kaçtır?"
+    
+    yanlisler = set()
+    while len(yanlisler) < 3:
+        sapma = random.choice([-5, -3, 3, 5, -8, 8])
+        y = int(dogru) + sapma
+        if y != int(dogru) and y > 0:
+            yanlisler.add(str(y))
+    siklar = [dogru] + list(yanlisler)
+    random.shuffle(siklar)
+    return metin, dogru, siklar
 
 def mat_yuzde():
-    s = random.randint(100,500); y = random.choice([10,15,20,25,30,40,50])
-    son = int(s*y/100); d = str(son)
-    m = f"{s} TL'lik ürüne %{y} indirim. İndirim kaç TL?"
-    y = [str(son+random.randint(3,8)), str(son-random.randint(3,8)), str(son+random.randint(1,2))]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
+    """Yüzdeler - 3 tip"""
+    tip = random.choice([1, 2, 3])
+    
+    if tip == 1:
+        sayi = random.randint(100, 500); yuzde = random.choice([10, 15, 20, 25, 30, 40, 50])
+        sonuc = int(sayi * yuzde / 100)
+        dogru = str(sonuc)
+        metin = f"🛍️ **İndirim Hesaplama**\n\n**{sayi} TL**'lik bir ürüne **%{yuzde}** indirim yapılıyor.\n\n**İndirim miktarı kaç TL'dir?**"
+    
+    elif tip == 2:
+        sayi = random.randint(100, 500); yuzde = random.choice([10, 20, 25, 30, 50, 60, 75])
+        sonuc = int(sayi * (100 - yuzde) / 100)
+        dogru = str(sonuc)
+        metin = f"🏷️ **İndirimli Fiyat**\n\n**{sayi} TL**'lik bir ürüne **%{yuzde}** indirim uygulanıyor.\n\n**İndirimli fiyat kaç TL'dir?**"
+    
+    else:
+        sayi = random.randint(100, 500); yuzde = random.choice([10, 15, 20, 25, 30])
+        artis = random.choice(["artırılıyor", "azaltılıyor"])
+        if artis == "artırılıyor":
+            sonuc = int(sayi * (100 + yuzde) / 100)
+            metin = f"📈 **Yüzde Artış**\n\n**{sayi} TL**'lik bir ürünün fiyatı **%{yuzde} artırılıyor**.\n\n**Yeni fiyat kaç TL'dir?**"
+        else:
+            sonuc = int(sayi * (100 - yuzde) / 100)
+            metin = f"📉 **Yüzde Azalış**\n\n**{sayi} TL**'lik bir ürünün fiyatı **%{yuzde} azaltılıyor**.\n\n**Yeni fiyat kaç TL'dir?**"
+        dogru = str(sonuc)
+    
+    yanlis = [str(int(dogru)+random.randint(3,8)), str(int(dogru)-random.randint(3,8)), str(int(dogru)+random.randint(1,2))]
+    siklar = [dogru] + yanlis
+    random.shuffle(siklar)
+    return metin, dogru, siklar
 
 def mat_aci():
-    a = random.randint(30,150); tip = random.choice(["tümler","bütünler"])
+    """Doğrular ve Açılar"""
+    aci = random.randint(30, 150)
+    tip = random.choice(["tümler", "bütünler", "ters"])
+    
     if tip == "tümler":
-        d = str(90-a); m = f"{a}°'lik açının tümleri kaç derece?"
+        dogru = str(90 - aci)
+        metin = f"📐 **Tümler Açı**\n\n{aci}°'lik bir açının **tümleri** kaç derecedir?"
+    elif tip == "bütünler":
+        dogru = str(180 - aci)
+        metin = f"📏 **Bütünler Açı**\n\n{aci}°'lik bir açının **bütünleri** kaç derecedir?"
     else:
-        d = str(180-a); m = f"{a}°'lik açının bütünleri kaç derece?"
-    y = [str(int(d)+random.randint(5,15)), str(int(d)-random.randint(5,15)), str(int(d)+random.randint(1,4))]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
+        # Ters açılar eşittir
+        dogru = str(aci)
+        metin = f"🔄 **Ters Açı**\n\nBirbirine ters açı durumunda olan iki açıdan biri {aci}° ise **diğer açı** kaç derecedir?"
+    
+    yanlis = [str(int(dogru)+random.randint(5,15)), str(int(dogru)-random.randint(5,15)), str(int(dogru)+random.randint(1,4))]
+    siklar = [dogru] + yanlis
+    random.shuffle(siklar)
+    return metin, dogru, siklar
 
 def mat_cokgen():
-    k = random.randint(3,8); tip = random.choice(["iç","dış"])
+    """Çokgenler"""
+    kenar = random.randint(3, 8)
+    tip = random.choice(["iç", "dış", "köşegen"])
+    
     if tip == "iç":
-        d = str((k-2)*180); m = f"{k} kenarlı çokgenin iç açıları toplamı kaç derece?"
+        dogru = str((kenar-2)*180)
+        metin = f"🟢 **Çokgen İç Açıları**\n\n**{kenar} kenarlı** bir çokgenin **iç açıları toplamı** kaç derecedir?"
+    elif tip == "dış":
+        dogru = str(int(360/kenar))
+        metin = f"🔺 **Dış Açı**\n\nDüzgün **{kenar} kenarlı** bir çokgenin **bir dış açısı** kaç derecedir?"
     else:
-        d = str(int(360/k)); m = f"Düzgün {k} kenarlı çokgenin bir dış açısı kaç derece?"
-    y = [str(int(d)+random.randint(10,30)), str(int(d)-random.randint(10,30)), str(int(d)+random.randint(5,9))]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
+        # Köşegen sayısı
+        dogru = str(kenar * (kenar-3) // 2)
+        metin = f"📐 **Köşegen Sayısı**\n\n**{kenar} kenarlı** bir çokgenin **toplam köşegen sayısı** kaçtır?"
+    
+    yanlis = [str(int(dogru)+random.randint(10,30)), str(int(dogru)-random.randint(10,30)), str(int(dogru)+random.randint(5,9))]
+    siklar = [dogru] + yanlis
+    random.shuffle(siklar)
+    return metin, dogru, siklar
 
 def mat_cember():
-    r = random.randint(3,15); tip = random.choice(["çevre","alan"]); pi = 3
+    """Çember ve Daire"""
+    r = random.randint(3, 15)
+    tip = random.choice(["çevre", "alan", "çap"])
+    pi = 3
+    
     if tip == "çevre":
-        d = str(2*pi*r); m = f"Yarıçap {r} cm olan çemberin çevresi? (π=3)"
+        dogru = str(2*pi*r)
+        metin = f"⭕ **Çemberin Çevresi**\n\nYarıçapı **{r} cm** olan bir çemberin **çevresi** kaç cm'dir? (π = 3)"
+    elif tip == "alan":
+        dogru = str(pi*r*r)
+        metin = f"🔵 **Dairenin Alanı**\n\nYarıçapı **{r} cm** olan bir dairenin **alanı** kaç cm²'dir? (π = 3)"
     else:
-        d = str(pi*r*r); m = f"Yarıçap {r} cm olan dairenin alanı? (π=3)"
-    y = [str(int(d)+random.randint(5,15)), str(int(d)-random.randint(5,15)), str(int(d)+random.randint(1,4))]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
-
-def mat_veri():
-    v = [random.randint(10,90) for _ in range(5)]
-    ort = sum(v)//5; med = sorted(v)[2]
-    tip = random.choice(["ortalama","medyan"])
-    if tip == "ortalama":
-        d = str(ort); m = f"{v} veri grubunun aritmetik ortalaması kaç?"
-    else:
-        d = str(med); m = f"{v} veri grubunun medyanı kaç?"
-    y = [str(int(d)+random.randint(2,6)), str(int(d)-random.randint(2,6)), str(int(d)+random.randint(1,2))]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
-
-def mat_cisim():
-    c = random.choice(["küp","dikdörtgen prizma","küre","silindir"])
-    bank = {
-        "küp": ("Bir küpün kaç ayrıtı vardır?", "12"),
-        "dikdörtgen prizma": ("Dikdörtgen prizmanın kaç yüzü vardır?", "6"),
-        "küre": ("Kürenin kaç köşesi vardır?", "0"),
-        "silindir": ("Silindirin yan yüzeyi açılınca hangi şekil oluşur?", "Dikdörtgen")
-    }
-    m, d = bank[c]
-    y = ["8","10","4"] if d=="12" else ["5","7","9"] if d=="6" else ["1","2","4"] if d=="0" else ["Kare","Üçgen","Daire"]
-    s = [d] + y
-    random.shuffle(s)
-    return m, d, s
-
-# ========== FEN BİLİMLERİ (7 KONU) ==========
-
-def fen_gunes():
-    soru = random.choice([
-        ("Güneş sisteminin en büyük gezegeni hangisidir?", "Jüpiter", ["Mars","Satürn","Jüpiter","Uranüs"]),
-        ("Dünya'nın doğal uydusunun adı nedir?", "Ay", ["Mars","Ay","Venüs","Jüpiter"]),
-        ("Güneş'e en yakın gezegen hangisidir?", "Merkür", ["Venüs","Merkür","Dünya","Mars"]),
-        ("Halkalarıyla ünlü gezegen hangisidir?", "Satürn", ["Jüpiter","Satürn","Uranüs","Neptün"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🌞 **Güneş Sistemi ve Ötesi**\n\n{m}", d, s
-
-def fen_hucre():
-    soru = random.choice([
-        ("Mitoz bölünme sonucunda bir hücreden kaç yeni hücre oluşur?", "2", ["1","2","4","8"]),
-        ("Hücrenin yönetim merkezi hangi organeldir?", "Çekirdek", ["Mitokondri","Çekirdek","Ribozom","Koful"]),
-        ("Mayoz bölünme nerede gerçekleşir?", "Üreme ana hücrelerinde", ["Vücut hücrelerinde","Üreme ana hücrelerinde","Sinir hücrelerinde","Kas hücrelerinde"]),
-        ("Hücrenin enerji üreten organeli hangisidir?", "Mitokondri", ["Mitokondri","Ribozom","Lizozom","Golgi"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🔬 **Hücre ve Bölünmeler**\n\n{m}", d, s
-
-def fen_kuvvet():
-    k = random.randint(5,20); v = random.randint(2,10); ke = int(0.5*k*v*v)
-    d = str(ke); m = f"Kütlesi {k} kg olan cisim {v} m/s hızla gidiyor. Kinetik enerjisi kaç Joule? (KE=½mv²)"
-    y = [str(ke+random.randint(5,15)), str(ke-random.randint(5,15)), str(ke+random.randint(1,4))]
-    s = [d] + y; random.shuffle(s)
-    return f"⚡ **Kuvvet ve Enerji**\n\n{m}", d, s
-
-def fen_madde():
-    soru = random.choice([
-        ("Tuz oranı %20 olan 300 g çözeltiye 50 g tuz eklenirse yeni tuz oranı yüzde kaç?", "32.86", ["30","32.86","35","40"]),
-        ("Yoğunluğu 0,9 g/cm³ ve 1,1 g/cm³ olan sıvılar eşit hacimde karıştırılırsa karışımın yoğunluğu kaç?", "1.0", ["0.9","1.0","1.1","2.0"]),
-        ("Homojen karışımlara verilen diğer ad nedir?", "Çözelti", ["Süspansiyon","Emülsiyon","Çözelti","Kolloid"]),
-        ("Bir elementin en küçük yapı taşı nedir?", "Atom", ["Molekül","Atom","Hücre","Tanecik"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🧪 **Saf Madde ve Karışımlar**\n\n{m}", d, s
-
-def fen_isik():
-    soru = random.choice([
-        ("Işığın bir engelle karşılaştığında geri dönmesine ne denir?", "Yansıma", ["Kırılma","Yansıma","Soğurma","Dağılma"]),
-        ("Işığın saydam ortamdan başka saydam ortama geçerken doğrultu değiştirmesine ne denir?", "Kırılma", ["Yansıma","Kırılma","Soğurma","Girişim"]),
-        ("Işığın en hızlı yayıldığı ortam hangisidir?", "Boşluk", ["Boşluk","Hava","Su","Cam"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"💡 **Işığın Madde ile Etkileşimi**\n\n{m}", d, s
-
-def fen_ureme():
-    soru = random.choice([
-        ("Bitkilerde tohum oluşumu için gerekli olay nedir?", "Tozlaşma", ["Döllenme","Tozlaşma","Çimlenme","Fotosentez"]),
-        ("Kurbağalarda görülen gelişim evrelerine ne ad verilir?", "Başkalaşım", ["Metamorfoz","Başkalaşım","Döllenme","Büyüme"]),
-        ("Memelilerde yavruların sütle beslenmesini sağlayan bez hangisidir?", "Süt bezi", ["Ter bezi","Yağ bezi","Süt bezi","Salya bezi"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🐸 **Canlılarda Üreme, Büyüme ve Gelişme**\n\n{m}", d, s
-
-def fen_elektrik():
-    tip = random.choice([1,2])
-    if tip == 1:
-        r1 = random.randint(2,5); r2 = random.randint(2,5)
-        d = str(r1+r2); m = f"{r1}Ω ve {r2}Ω'luk dirençler seri bağlanırsa eşdeğer direnç kaç Ω olur?"
-        y = [str(int(d)+random.randint(1,3)), str(int(d)-random.randint(1,3)), str(int(d)+random.randint(4,6))]
-    else:
-        r1 = random.randint(2,5); r2 = random.randint(2,5)
-        d = str(round((r1*r2)/(r1+r2),1)); m = f"{r1}Ω ve {r2}Ω'luk dirençler paralel bağlanırsa eşdeğer direnç kaç Ω olur?"
-        y = [str(float(d)+random.choice([0.5,1,1.5])), str(float(d)-random.choice([0.5,1,1.5])), str(float(d)+random.choice([0.2,0.8]))]
-    s = [d] + y; random.shuffle(s)
-    return f"⚡ **Elektrik Devreleri**\n\n{m}", d, s
-
-# ========== TÜRKÇE (8 KONU) ==========
-
-def tur_fiil():
-    f = random.choice(["gelmek","gitmek","bakmak","yazmak","okumak","koşmak","söylemek"])
-    k = random.choice(["şimdiki zaman","geniş zaman","geçmiş zaman","gelecek zaman","emir kipi"])
-    if k == "şimdiki zaman": d = f.replace("mek","").replace("mak","") + "yor"
-    elif k == "geniş zaman": d = f.replace("mek","").replace("mak","") + "r"
-    elif k == "geçmiş zaman": d = f.replace("mek","").replace("mak","") + "di"
-    elif k == "gelecek zaman": d = f.replace("mek","").replace("mak","") + "ecek"
-    else: d = f.replace("mek","").replace("mak","")
-    m = f"'{f}' fiilinin **{k} 2. tekil kişi** çekimi nasıldır?"
-    s = [d, d+"m", d+"k", d+"n"]; random.shuffle(s)
-    return f"📖 **Fiiller (Kip ve Kişi Ekleri)**\n\n{m}", d, s
-
-def tur_zarf():
-    cumle = random.choice([
-        ("Hızlı koştu", "hızlı", ["hızlı","koştu","o","güzel"]),
-        ("Çok güzel olmuş", "çok", ["çok","güzel","olmuş","o"]),
-        ("Yarın geleceğim", "yarın", ["yarın","geleceğim","ben","gün"]),
-        ("Dikkatlice dinledi", "dikkatlice", ["dikkatlice","dinledi","o","sessizce"]),
-        ("İçeri girdi", "içeri", ["içeri","girdi","o","hızla"])
-    ])
-    m, d, s = cumle; random.shuffle(s)
-    return f"📝 **Zarflar**\n\n'{m}' cümlesindeki zarf hangisidir?", d, s
-
-def tur_anlam():
-    soru = random.choice([
-        ("'Bugün hava çok güzel.' cümlesinde hangi duygu vardır?", "mutluluk", ["üzüntü","mutluluk","öfke","korku"]),
-        ("'Keşke daha çok çalışsaydım.' cümlesinde hangi anlam vardır?", "pişmanlık", ["pişmanlık","özlem","kararlılık","şart"]),
-        ("'Bu işi yapabilir misin?' cümlesi hangi anlamda kullanılmıştır?", "rica/istek", ["emir","rica/istek","koşul","olasılık"]),
-        ("'Yağmur yağsa da topraklar ıslansa.' cümlesinde hangi anlam var?", "özlem", ["özlem","pişmanlık","koşul","kararlılık"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"💬 **Cümlede Anlam**\n\n{m}", d, s
-
-def tur_paragraf():
-    soru = random.choice([
-        ("Teknoloji hayatımızı kolaylaştırsa da bizi tembelleştiriyor. Eskiden insanlar yürürdü şimdi araba kullanıyor. Merdivenlerden çıkardı şimdi asansör tercih ediyor.\n\nBu paragrafta asıl anlatılmak istenen nedir?",
-         "Teknolojinin insanı tembelleştirmesi", ["Teknolojinin yararları","Teknolojinin insanı tembelleştirmesi","Spor yapmanın önemi","Asansörün icadı"]),
-        ("Ne kadar bilirsen bil, anlatabildiğin kadarsın.\n\nBu cümlede vurgulanmak istenen nedir?",
-         "Bilginin aktarımı önemlidir", ["Bilgi her şey değildir","Anlatmak zordur","Bilginin aktarımı önemlidir","Sessizlik erdemdir"]),
-        ("Kitap okumak zihnin jimnastiğidir. Zihnimizi çalıştırır, hayal gücümüzü geliştirir.\n\nYazarın bu parçada vurguladığı fikir nedir?",
-         "Kitap okumak zihni geliştirir", ["Kitap okumak zaman kaybıdır","Kitap okumak zihni geliştirir","Sadece çocuklar kitap okumalı","Kitap okumak sıkıcıdır"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"📄 **Paragrafta Anlam**\n\n{m}", d, s
-
-def tur_yazim():
-    soru = random.choice([
-        ("Aşağıdakilerden hangisi doğru yazılmıştır?", "herkes", ["herkez","herkes","herkeş","herkese"]),
-        ("'Türkiye'nin başkenti ...' cümlesinde boşluğa hangi şehir gelmelidir?", "Ankara", ["İstanbul","Ankara","İzmir","Bursa"]),
-        ("'Herşey' kelimesinin doğru yazımı aşağıdakilerden hangisidir?", "Her şey", ["Herşey","Her şey","Her-şey","Her şe'y"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"✍️ **Yazım Kuralları**\n\n{m}", d, s
-
-def tur_noktalama():
-    soru = random.choice([
-        ("Sıralı cümleleri ayırmak için hangi noktalama işareti kullanılır?", "Noktalı virgül", ["Virgül","Nokta","Noktalı virgül","İki nokta"]),
-        ("Alıntı cümlelerden önce hangi işaret konulur?", "İki nokta", ["Virgül","Nokta","Noktalı virgül","İki nokta"]),
-        ("Ünlem işareti hangi durumda kullanılır?", "Sevinç, heyecan, korku", ["Soru sorarken","Sevinç, heyecan, korku","Alıntı yaparken","Sıralama yaparken"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🔖 **Noktalama İşaretleri**\n\n{m}", d, s
-
-def tur_sozcuk():
-    soru = random.choice([
-        ("'Soğuk' kelimesinin zıt anlamlısı nedir?", "sıcak", ["sıcak","buzlu","donuk","serin"]),
-        ("'Yüzmek' kelimesi hangi cümlede mecaz anlamda kullanılmıştır?", "Paralar içinde yüzüyor.", ["Denizde yüzdü.","Paralar içinde yüzüyor.","Yüzmeyi çok sever.","Nehirde yüzdü."]),
-        ("Eş sesli (sesteş) kelime örneği hangisidir?", "yüz", ["kalem","silgi","yüz","defter"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🔤 **Sözcükte Anlam**\n\n{m}", d, s
-
-def tur_cumle():
-    soru = random.choice([
-        ("'Kitap okumayı çok severim.' cümlesi yüklemin türüne göre hangisidir?", "İsim cümlesi", ["Fiil cümlesi","İsim cümlesi","Devrik cümle","Birleşik cümle"]),
-        ("'Hava çok soğudu.' cümlesi olumlu mu olumsuz mu?", "Olumlu", ["Olumlu","Olumsuz","Soru","Ünlem"]),
-        ("'Ah, bu kadar da olmaz!' cümlesinin türü nedir?", "Ünlem cümlesi", ["İsim cümlesi","Fiil cümlesi","Ünlem cümlesi","Soru cümlesi"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"📌 **Cümle Türleri**\n\n{m}", d, s
-
-# ========== SOSYAL BİLGİLER (7 KONU) ==========
-
-def sos_iletisim():
-    soru = random.choice([
-        ("Duygu, düşünce ve bilgilerin aktarılması sürecine ne denir?", "İletişim", ["Empati","İletişim","Hoşgörü","Saygı"]),
-        ("Bir kişinin karşısındakinin duygularını anlamaya çalışmasına ne ad verilir?", "Empati", ["Sempati","Empati","Özgecilik","Fedakarlık"]),
-        ("Sözsüz iletişim örneği hangisidir?", "Jest ve mimikler", ["Konuşmak","Jest ve mimikler","Mektup","Telefon"])
-    ])
-    m, d, s = soru; random.shuffle(s)
-    return f"🗣️ **İletişim ve İnsan İlişkileri**\n\n{m}", d, s
-
-def sos_tarih():
-    soru = random.choice([
-        ("İlk Türk devletlerinden biri hangisidir?", "Asya Hun Devleti", ["Osmanlı","Asya Hun","Bizans","Roma"]),
-        ("Osmanlı Devleti'nde Lale Devri'nde yapılan yeniliklerden biri nedir?", "Matbaa", ["Matbaa","Fetih","Anayasa","Cumhuriyet"]),
-        ("Milli Mücadele döneminde açılan kongrelerden hangisi?", "Sivas Kongresi", ["
+        dogru = str(2*r)
+        metin = f"📏 **Çap Hesaplama**\n\nYarıçapı **{r} cm** olan bir çemberin **çapı** kaç cm'dir?"
+    
+    yanlis = [str(int(dogru)+random.randint(5,15)), str(int(dogru)-random.randint(5,15)), str(int(dogru)+random.randint(1,4))]
+    siklar = [dogru] + yanlis
+    random.shuffle(siklar)
