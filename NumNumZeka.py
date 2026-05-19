@@ -4,13 +4,13 @@ import math
 
 st.set_page_config(page_title="NumNum Zeka", page_icon="🎯")
 
-# ========== RENK STİLLERİ (DÜZELTİLMİŞ, DROPDOWN GÖRÜNÜR) ==========
+# ========== RENK STİLLERİ (Ders Seç ve SKOR yazısı siyah) ==========
 st.markdown("""
 <style>
     .stApp {
         background: linear-gradient(135deg, #0a0f1f 0%, #0f172a 100%);
     }
-    .stMarkdown, .stText, div, p, span, label, .stMetric label {
+    .stMarkdown, .stText, div, p, span, .stMetric label {
         color: #ffffff !important;
     }
     /* Selectbox ana kutu */
@@ -20,8 +20,9 @@ st.markdown("""
         border-radius: 10px;
         border: 1px solid #3b82f6;
     }
+    /* "Ders Seç" label'ı siyah */
     .stSelectbox label {
-        color: white !important;
+        color: #000000 !important;
     }
     /* Dropdown liste */
     div[data-baseweb="select"] ul {
@@ -33,6 +34,10 @@ st.markdown("""
     }
     div[data-baseweb="select"] li:hover {
         background-color: #3b82f6 !important;
+    }
+    /* Sidebar içindeki "SKOR" başlığı siyah */
+    div[data-testid="stSidebar"] .stMarkdown h3 {
+        color: #000000 !important;
     }
     /* Butonlar */
     .stButton button {
