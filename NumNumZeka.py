@@ -2,16 +2,16 @@ import streamlit as st
 import random
 import math
 
-st.set_page_config(page_title="NumNum Zeka - 7. Sınıf LGS", page_icon="🎯")
+st.set_page_config(page_title="NumNum Zeka", page_icon="🎯")
 
-# ========== MODERN RENK TEMASI (Koyu, uyumlu, profesyonel) ==========
+# ========== YENİ RENK TEMASI (UYUMLU, HER ŞEY GÖRÜNÜR) ==========
 st.markdown("""
 <style>
     .stApp { background: linear-gradient(135deg, #0a0f1f 0%, #0f172a 100%); }
-    .stMarkdown, .stText, div, p, span, label, .stMetric label { color: #e2e8f0 !important; }
-    .stButton button { background-color: #3b82f6; color: white; border-radius: 12px; font-weight: bold; transition: all 0.2s; width: 100%; }
-    .stButton button:hover { background-color: #2563eb; transform: scale(1.01); box-shadow: 0 4px 12px rgba(59,130,246,0.4); }
-    .stSelectbox, .stChatInput textarea { background-color: #1e293b; color: #e2e8f0; border-radius: 12px; border: 1px solid #334155; }
+    .stMarkdown, .stText, div, p, span, label, .stMetric label { color: #ffffff !important; }
+    .stButton button { background-color: #3b82f6; color: white; border-radius: 12px; font-weight: bold; width: 100%; border: none; }
+    .stButton button:hover { background-color: #2563eb; transform: scale(1.01); }
+    .stSelectbox, .stChatInput textarea { background-color: #1e293b; color: white; border-radius: 12px; border: 1px solid #334155; }
     .stChatMessage { background-color: #1e293b; border-radius: 20px; padding: 12px; margin: 8px 0; border-left: 4px solid #3b82f6; }
     .stMetric { background-color: #1e293b; border-radius: 20px; padding: 12px; text-align: center; }
     hr { border-color: #334155; }
@@ -24,6 +24,7 @@ st.markdown("**Her soru dinamik, her konuda 10+ tip, yeni nesil zor sorular**")
 # ========== OTURUM DURUMU ==========
 if "mesajlar" not in st.session_state:
     st.session_state.mesajlar = []
+if "aktif_soru" not in st.session_state:
     st.session_state.aktif_soru = None
     st.session_state.aktif_cevap = None
     st.session_state.aktif_siklar = None
@@ -32,6 +33,7 @@ if "mesajlar" not in st.session_state:
     st.session_state.dogru = 0
     st.session_state.yanlis = 0
 
+# ========== PUAN SIFIRLAMA FONKSİYONU ==========
 def sifirla():
     st.session_state.puan = 0
     st.session_state.dogru = 0
@@ -43,8 +45,8 @@ def sifirla():
     st.session_state.secili_ders = None
     st.rerun()
 
-# ==================== MATEMATİK - ZOR, UZUN, YENİ NESİL ====================
-def mat_tam():
+# ==================== MATEMATİK (TAMAMI, 12 KONU) ====================
+def mat_tam_sayilar():
     tip = random.choice([1,2,3,4,5,6,7,8,9])
     if tip == 1:
         b = random.randint(-80,-15); t=b; h=[]
@@ -54,7 +56,7 @@ def mat_tam():
                 t+=a; h.append(f"{a} m yükseliyor")
             else:
                 t-=a; h.append(f"{a} m dalıyor")
-        m = f"Bir dalgıç deniz seviyesinden {b} metre derinlikte iken sırasıyla: " + ", ".join(h) + f".\n\n**Dalgıcın son konumu kaç metredir?**"
+        m = f"Bir dalgıç deniz seviyesinden {b} m derinlikte iken " + ", ".join(h) + f".\n\n**Dalgıcın son konumu kaç metredir?**"
         d=str(t)
     elif tip == 2:
         b=random.randint(-25,-5); t=b
@@ -78,8 +80,7 @@ def mat_tam():
         d=str(t)
     elif tip == 5:
         maas=random.randint(3000,6000); giderler=[random.randint(200,800) for _ in range(random.randint(4,7))]
-        toplam_gider=sum(giderler)
-        kalan=maas - toplam_gider
+        toplam_gider=sum(giderler); kalan=maas - toplam_gider
         m = f"Ali'nin maaşı {maas} TL'dir. Ay içinde " + ", ".join([f"{g} TL" for g in giderler]) + f" harcama yapıyor.\n\n**Ay sonunda kaç TL'si kalır?**"
         d=str(kalan)
     elif tip == 6:
@@ -101,7 +102,7 @@ def mat_tam():
         for _ in range(adimlar):
             deg=random.choice([-50,-30,25,40,60,80])
             p+=deg
-        m = f"Bir yarışmacı {p-adimlar*30} puanla başlıyor. {adimlar} hamlede " + ", ".join([f"{random.choice(['+','-'])}{random.randint(20,90)}" for _ in range(adimlar)]) + f" puan değişimi yaşıyor.\n\n**Son puan kaçtır?**"
+        m = f"Bir yarışmacı {p-adimlar*30} puanla başlıyor. {adimlar} hamlede puan değişimi yaşıyor.\n\n**Son puan kaçtır?**"
         d=str(p)
     yanlis = set()
     while len(yanlis)<3:
@@ -126,7 +127,7 @@ def mat_rasyonel():
     elif tip == 2:
         p=random.randint(1,15); pd=random.randint(2,15)
         v=p/pd; d=f"{v:.2f}"
-        m = f"{p}/{pd} rasyonel sayısının ondalık gösterimi (virgülden sonra 2 basamak) nedir?"
+        m = f"{p}/{pd} rasyonel sayısının ondalık gösterimi (2 basamak) nedir?"
         y=[f"{v+0.1:.2f}", f"{v-0.1:.2f}", f"{v+0.05:.2f}"]; s=[d]+y; random.shuffle(s); return m,d,s
     elif tip == 3:
         p=random.randint(1,10); pd=random.randint(2,10)
@@ -200,7 +201,7 @@ def mat_denklem():
     return m, dogru, s
 
 def mat_oran():
-    tip = random.choice([1,2,3])
+    tip = random.choice([1,2])
     if tip == 1:
         a=random.randint(2,12); b=random.randint(2,12); k=random.randint(2,7)
         x=b*k; d=str(x)
@@ -253,7 +254,7 @@ def mat_cember():
     return m, d, s
 
 def mat_veri():
-    v=[random.randint(10,100) for _ in range(6)]; ort=sum(v)//6; med=sorted(v)[2]; ac=max(v)-min(v)
+    v=[random.randint(10,100) for _ in range(6)]; ort=sum(v)//6; med=sorted(v)[3]; ac=max(v)-min(v)
     tip=random.choice(["ortalama","medyan","açıklık"])
     if tip=="ortalama": d=str(ort); m=f"{v} veri grubunun aritmetik ortalaması kaçtır?"
     elif tip=="medyan": d=str(med); m=f"{v} veri grubunun medyanı (ortanca) kaçtır?"
@@ -269,104 +270,134 @@ def mat_cisim():
     elif c=="silindir": return "Silindirin yan yüzeyi açıldığında hangi şekil oluşur?", "Dikdörtgen", ["Kare","Üçgen","Dikdörtgen","Daire"]
     else: return "Kare prizmanın kaç ayrıtı vardır?", "12", ["8","10","12","14"]
 
-# ==================== FEN BİLİMLERİ - ZOR UZUN SORULAR ====================
+# ==================== FEN BİLİMLERİ (7 KONU) ====================
 def fen_gunes():
     sorular = [
-        ("Güneş sisteminin en büyük gezegeni olan Jüpiter'in kaç uydusu olduğu tahmin edilmektedir? (yaklaşık)", "80", ["60","70","80","90"]),
-        ("Dünya'nın Güneş etrafında tam bir tur atması kaç gün sürer? (365 değil, tam değer)", "365.242", ["365.0","365.242","365.25","366"]),
-        ("Bir uzay aracı Dünya'da 600 N ağırlığındaysa Ay'da kaç N olur? (g_Ay = 1.62 m/s²)", "99", ["90","99","108","120"]),
-        ("Güneş'in yüzey sıcaklığı yaklaşık kaç °C'dir?", "5500", ["5000","5500","6000","6500"]),
-        ("Samanyolu Galaksisi'nin şekli nedir?", "Sarmal", ["Eliptik","Sarmal","Düzensiz","Çubuklu sarmal"]),
-        ("En sıcak gezegen Venüs'ün yüzey sıcaklığı yaklaşık kaç °C'dir?", "460", ["400","430","460","500"]),
+        ("Güneş sisteminin en büyük gezegeni hangisidir?", "Jüpiter", ["Mars","Satürn","Jüpiter","Uranüs"]),
+        ("Dünya'nın doğal uydusu nedir?", "Ay", ["Mars","Ay","Venüs","Jüpiter"]),
+        ("Güneş'e en yakın gezegen hangisidir?", "Merkür", ["Venüs","Merkür","Dünya","Mars"]),
+        ("Halkalarıyla ünlü gezegen hangisidir?", "Satürn", ["Jüpiter","Satürn","Uranüs","Neptün"]),
+        ("En sıcak gezegen hangisidir?", "Venüs", ["Merkür","Venüs","Dünya","Mars"]),
     ]
     return random.choice(sorular)
 
 def fen_hucre():
     sorular = [
-        ("Mitoz bölünme sonucunda bir hücreden iki hücre oluşur. Bir insan hücresi (2n=46) art arda 3 mitoz geçirirse toplam kaç kromozom oluşur? (tüm hücrelerdeki kromozom toplamı)", "368", ["184","276","368","460"]),
-        ("Hücre zarında bulunan ve madde geçişini kontrol eden proteinlere ne ad verilir?", "Taşıyıcı protein", ["Porin","Taşıyıcı protein","Kanal proteini","Reseptör"]),
-        ("Mayoz bölünme sırasında homolog kromozomların birbirine sarılmasına ne denir?", "Sinapsis", ["Krossing over","Sinapsis","Tetrat","Mayoz I"]),
-        ("Bitki hücresinde bulunup hayvan hücresinde bulunmayan organel hangisidir?", "Kloroplast", ["Mitokondri","Kloroplast","Ribozom","Golgi"]),
-        ("Hücre iskeletini oluşturan protein lifleri hangisidir?", "Mikrotübül", ["Aktin","Mikrotübül","İntermediate filament","Keratin"]),
+        ("Mitoz bölünme sonucu kaç hücre oluşur?", "2", ["1","2","4","8"]),
+        ("Hücrenin yönetim merkezi hangi organeldir?", "Çekirdek", ["Mitokondri","Çekirdek","Ribozom","Koful"]),
+        ("Mayoz bölünme nerede gerçekleşir?", "Üreme ana hücrelerinde", ["Vücut hücrelerinde","Üreme ana hücrelerinde","Sinir hücrelerinde","Kas hücrelerinde"]),
+        ("Hücrenin enerji üreten organeli hangisidir?", "Mitokondri", ["Mitokondri","Ribozom","Lizozom","Golgi"]),
     ]
     return random.choice(sorular)
 
 def fen_kuvvet():
     k=random.randint(5,30); v=random.randint(3,15); ke=int(0.5*k*v*v)
     sorular = [
-        (f"Kütlesi {k} kg olan bir araç {v} m/s hızla giderken fren yaparak duruyor. Frenleme sırasında açığa çıkan ısı enerjisi kaç Joule'dür? (Kinetik enerji değişimi)", str(ke), [str(ke-20), str(ke+30), str(ke+15), str(ke-10)]),
+        (f"Kütlesi {k} kg olan bir cisim {v} m/s hızla hareket ediyor. Kinetik enerjisi kaç Joule'dür?", str(ke), [str(ke-20), str(ke+30), str(ke+15), str(ke-10)]),
         ("Bir cismin potansiyel enerjisi 500 J, yüksekliği 10 m ise kütlesi kaç kg'dır? (g=10 N/kg)", "5", ["3","4","5","6"]),
-        ("Yay sabiti 250 N/m olan bir yay 0,4 m sıkıştırıldığında yayda depolanan enerji kaç J olur?", "20", ["15","20","25","30"]),
-        ("Sürtünmeli yatay düzlemde 20 N kuvvetle çekilen 5 kg kütleli cisim sabit hızla hareket ediyorsa sürtünme katsayısı kaçtır? (g=10)", "0.4", ["0.2","0.3","0.4","0.5"]),
+        ("Sürtünme kuvveti hangi yönde etki eder?", "Harekete zıt yönde", ["Hareket yönünde","Harekete zıt yönde","Dikey yönde","Yatay yönde"]),
     ]
     return random.choice(sorular)
 
 def fen_madde():
     sorular = [
-        ("Tuz oranı %15 olan 200 g çözeltiye 40 g tuz eklenirse yeni tuz oranı yüzde kaç olur?", "29.2", ["25","27.5","29.2","31.8"]),
-        ("Yoğunluğu 0,8 g/cm³ olan 200 cm³ sıvı ile yoğunluğu 1,2 g/cm³ olan 300 cm³ sıvı karıştırılıyor. Karışımın yoğunluğu kaç g/cm³ olur?", "1.04", ["0.96","1.00","1.04","1.08"]),
-        ("Bir elementin periyodik tablodaki yeri 3. periyot 7A grubu ise bu element nedir?", "Klor", ["Flor","Klor","Brom","İyot"]),
-        ("Homojen karışımlar için aşağıdakilerden hangisi yanlıştır?", "Işık saçarlar", ["Tek fazlıdır","Işık saçarlar","Bileşenleri ayrılamaz","Belirli bir formülü yoktur"]),
+        ("Homojen karışımlara ne denir?", "Çözelti", ["Süspansiyon","Emülsiyon","Çözelti","Kolloid"]),
+        ("Bir elementin en küçük yapı taşı nedir?", "Atom", ["Molekül","Atom","Hücre","Tanecik"]),
+        ("Heterojen karışıma örnek hangisidir?", "Ayran", ["Tuzlu su","Şekerli su","Ayran","Hava"]),
     ]
     return random.choice(sorular)
 
 def fen_isik():
     sorular = [
-        ("Işığın bir ortamdan başka bir ortama geçerken doğrultu değiştirmesi olayına kırılma denir. Bir ışık ışınının havadan suya gelme açısı 45°, kırılma açısı 32° ise suyun kırılma indisi nedir? (sin45=0.707, sin32=0.530)", "1.33", ["1.00","1.33","1.50","1.62"]),
-        ("Bir aynada oluşan görüntü sanal, düz ve cisimle aynı boyda ise ayna türü nedir?", "Düzlem ayna", ["Çukur ayna","Tümsek ayna","Düzlem ayna","Parabolik ayna"]),
-        ("Beyaz ışığın prizmadan geçerken renklerine ayrılması olayına ne denir?", "Dağılma", ["Yansıma","Kırılma","Dağılma","Girişim"]),
-        ("Bir merceğin odak uzaklığı 20 cm ise optik gücü kaç diyoptridir?", "5", ["2","3","4","5"]),
+        ("Işığın bir engelle karşılaştığında geri dönmesine ne denir?", "Yansıma", ["Kırılma","Yansıma","Soğurma","Dağılma"]),
+        ("Işığın saydam ortamdan başka saydam ortama geçerken doğrultu değiştirmesine ne ad verilir?", "Kırılma", ["Yansıma","Kırılma","Soğurma","Girişim"]),
+        ("Işığın en hızlı yayıldığı ortam hangisidir?", "Boşluk", ["Boşluk","Hava","Su","Cam"]),
     ]
     return random.choice(sorular)
 
 def fen_ureme():
     sorular = [
-        ("Kurbağa yumurtalarından çıkan larvalara ne ad verilir?", "İribaş", ["Yavru","İribaş","Sperm","Larva"]),
-        ("Bitkilerde çiçek tozlarının dişicik tepesine taşınması olayına ne denir?", "Tozlaşma", ["Döllenme","Tozlaşma","Çimlenme","Polinasyon"]),
-        ("İnsanda embriyonun rahime yerleşmesine ne denir?", "İmplantasyon", ["Ovulasyon","İmplantasyon","Gastrulasyon","Fertilizasyon"]),
-        ("Kelebek gelişiminde pupa evresinden çıkan canlıya ne denir?", "İmago", ["Larva","Pupa","İmago","Yumurta"]),
+        ("Kurbağalarda görülen gelişim evrelerine ne ad verilir?", "Başkalaşım", ["Metamorfoz","Başkalaşım","Döllenme","Büyüme"]),
+        ("Bitkilerde tohum oluşumu için gerekli olay nedir?", "Tozlaşma", ["Döllenme","Tozlaşma","Çimlenme","Fotosentez"]),
+        ("Memelilerde yavruların sütle beslenmesini sağlayan bez hangisidir?", "Süt bezi", ["Ter bezi","Yağ bezi","Süt bezi","Salya bezi"]),
     ]
     return random.choice(sorular)
 
 def fen_elektrik():
-    r1=random.randint(3,8); r2=random.randint(4,9); r3=random.randint(2,7)
-    seri=r1+r2+r3; paralel=round(1/(1/r1+1/r2+1/r3),1)
+    r1=random.randint(2,5); r2=random.randint(2,5)
     sorular = [
-        (f"{r1}Ω, {r2}Ω ve {r3}Ω'luk üç direnç seri bağlanırsa eşdeğer direnç kaç Ω olur?", str(seri), [str(seri-2), str(seri+1), str(seri+3), str(seri-1)]),
-        (f"{r1}Ω, {r2}Ω ve {r3}Ω'luk üç direnç paralel bağlanırsa eşdeğer direnç kaç Ω olur?", str(paralel), [str(paralel+0.5), str(paralel-0.5), str(paralel+1), str(paralel-1)]),
-        ("Bir elektrik devresinde 12 V'luk bir pil üzerinden 2 A akım geçiyorsa devrenin toplam direnci kaç Ω'dur?", "6", ["4","5","6","7"]),
-        ("Bir ampulün üzerinde 60 W, 220 V yazıyorsa ampulün direnci yaklaşık kaç Ω'dur?", "807", ["600","700","800","900"]),
+        (f"{r1}Ω ve {r2}Ω'luk iki direnç seri bağlanırsa eşdeğer direnç kaç Ω olur?", str(r1+r2), [str(r1+r2+1), str(r1+r2-1), str(r1+r2+2), str(r1+r2-2)]),
+        (f"{r1}Ω ve {r2}Ω'luk iki direnç paralel bağlanırsa eşdeğer direnç kaç Ω olur?", str(round((r1*r2)/(r1+r2),1)), [str(round((r1*r2)/(r1+r2)+0.5,1)), str(round((r1*r2)/(r1+r2)-0.5,1)), str(round((r1*r2)/(r1+r2)+0.2,1))]),
+        ("Bir ampulün parlaklığını artırmak için ne yapılır?", "Pil sayısı artırılır", ["Pil sayısı azaltılır","Direnç eklenir","Pil sayısı artırılır","Kablo uzatılır"]),
     ]
     return random.choice(sorular)
 
-# ==================== TÜRKÇE - UZUN PARAGRAFLI ZOR SORULAR ====================
+# ==================== TÜRKÇE (8 KONU) ====================
+def tur_fiil():
+    f = random.choice(["gelmek","gitmek","bakmak","yazmak","okumak"])
+    d = f.replace("mek","").replace("mak","") + "yor"
+    return f"'{f}' fiilinin şimdiki zaman 2. tekil kişi çekimi nedir?", d, [d, d+"m", d+"k", d+"n"]
+
+def tur_zarf():
+    cumleler = [
+        ("Hızlı koştu", "hızlı", ["hızlı","koştu","o","güzel"]),
+        ("Çok güzel olmuş", "çok", ["çok","güzel","olmuş","o"]),
+        ("Yarın geleceğim", "yarın", ["yarın","geleceğim","ben","gün"]),
+    ]
+    return random.choice(cumleler)
+
+def tur_anlam():
+    sorular = [
+        ("'Keşke daha çok çalışsaydım.' cümlesinde hangi anlam vardır?", "pişmanlık", ["pişmanlık","özlem","kararlılık","şart"]),
+        ("'Bu işi yapabilir misin?' cümlesi hangi anlamda kullanılmıştır?", "rica/istek", ["emir","rica/istek","koşul","olasılık"]),
+    ]
+    return random.choice(sorular)
+
 def tur_paragraf():
-    m = "Sanat, insanlığın en eski ifade biçimlerinden biridir. Mağara duvarlarına çizilen resimlerden günümüzün dijital sanatına kadar uzanan bu serüven, insanın kendini ifade etme arzusunun bir yansımasıdır. Sanat, sadece güzel olanı değil, aynı zamanda çirkin olanı, acıyı, sevinci, umudu ve umutsuzluğu da anlatır. Bu yönüyle sanat, toplumların aynasıdır. Bir toplumun değer yargılarını, inançlarını, korkularını ve hayallerini sanat eserlerinde okumak mümkündür.\n\n**Bu parçada vurgulanmak istenen ana düşünce nedir?**"
-    d = "Sanat, toplumların aynasıdır"
-    s = ["Sanat sadece güzel olanı anlatır", "Sanat, toplumların aynasıdır", "Sanat tarihi mağaralarla başlar", "Dijital sanat en gelişmiş sanattır"]
+    m = "Ne kadar bilirsen bil, anlatabildiğin kadarsın.\n\nBu cümlede vurgulanmak istenen ana düşünce nedir?"
+    d = "Bilginin aktarımı önemlidir"
+    s = ["Bilgi her şey değildir", "Anlatmak zordur", "Bilginin aktarımı önemlidir", "Sessizlik erdemdir"]
     random.shuffle(s)
     return m, d, s
+
+def tur_yazim():
+    return "Aşağıdakilerden hangisi doğru yazılmıştır?", "herkes", ["herkez","herkes","herkeş","herkese"]
+
+def tur_noktalama():
+    return "Sıralı cümleleri ayırmak için hangi noktalama işareti kullanılır?", "Noktalı virgül", ["Virgül","Nokta","Noktalı virgül","İki nokta"]
 
 def tur_sozcuk():
-    sorular = [
-        ("'Soğuk' kelimesinin zıt anlamlısı nedir?", "sıcak", ["sıcak","buzlu","donuk","serin"]),
-        ("Eş sesli (sesteş) kelime örneği hangisidir?", "yüz", ["kalem","silgi","yüz","defter"]),
-        ("'Yüzmek' kelimesi aşağıdaki cümlelerin hangisinde mecaz anlamda kullanılmıştır?", "Paralar içinde yüzüyor", ["Denizde yüzdü","Paralar içinde yüzüyor","Yüzmeyi çok sever","Nehirde yüzdü"]),
-    ]
-    return random.choice(sorular)
+    return "'Soğuk' kelimesinin zıt anlamlısı nedir?", "sıcak", ["sıcak","buzlu","donuk","serin"]
 
-# ==================== SOSYAL BİLGİLER - ZOR SORULAR ====================
+def tur_cumle():
+    return "'Kitap okumayı çok severim.' cümlesi yüklemin türüne göre hangisidir?", "İsim cümlesi", ["Fiil cümlesi","İsim cümlesi","Devrik cümle","Birleşik cümle"]
+
+# ==================== SOSYAL BİLGİLER (7 KONU) ====================
+def sos_iletisim():
+    return "Duygu, düşünce ve bilgilerin aktarılması sürecine ne denir?", "İletişim", ["Empati","İletişim","Hoşgörü","Saygı"]
+
+def sos_tarih():
+    return "İlk Türk devletlerinden biri hangisidir?", "Asya Hun Devleti", ["Osmanlı","Asya Hun","Bizans","Roma"]
+
+def sos_nufus():
+    return "Bir ülkede yaşayan insan sayısına ne denir?", "Nüfus", ["Nüfus yoğunluğu","Nüfus","Göç","Demografi"]
+
+def sos_bilim():
+    return "Matematik, fizik, kimya gibi disiplinlere ne ad verilir?", "Bilim", ["Teknoloji","Sanat","Bilim","Edebiyat"]
+
+def sos_ekonomi():
+    return "İhtiyaçları karşılamak için yapılan her türlü faaliyete ne denir?", "Üretim", ["Tüketim","Üretim","Pazarlama","Reklam"]
+
 def sos_kultur():
-    m = "UNESCO Dünya Mirası Listesi'nde yer alan Kapadokya, benzersiz peri bacaları ve yeraltı şehirleriyle ünlüdür. Bölgedeki volkanik tüflerin erozyonu sonucu oluşan bu oluşumlar, binlerce yıl boyunca farklı medeniyetlere ev sahipliği yapmıştır. Hristiyanlığın ilk dönemlerinde bu mağaralar ve yeraltı şehirleri, Hristiyanlar için bir sığınak ve ibadet yeri olmuştur. Ayrıca bölgede bulunan Göreme Açık Hava Müzesi, bu döneme ait freskleriyle dikkat çeker.\n\n**Kapadokya'nın UNESCO Dünya Mirası Listesi'ne alınmasının temel nedeni aşağıdakilerden hangisidir?**"
-    d = "Doğal güzelliğinin yanı sıra tarihi ve kültürel önemi"
-    s = ["Sadece doğal güzelliği", "Sadece yeraltı şehirleri", "Doğal güzelliği ve tarihi-kültürel değeri", "Freskleri ve ibadethaneleri"]
-    random.shuffle(s)
-    return m, d, s
+    return "Bir topluma ait maddi ve manevi değerler bütününe ne denir?", "Kültür", ["Medeniyet","Kültür","Gelenek","Görenek"]
 
-# ==================== TÜM DERSLERİ BİRLEŞTİR ====================
+def sos_demokrasi():
+    return "Halkın kendi kendini yönettiği yönetim biçimi?", "Demokrasi", ["Monarşi","Oligarşi","Demokrasi","Teokrasi"]
+
+# ==================== DERS VE KONU BİRLEŞTİRME ====================
 tum_dersler = {
     "Matematik": {
-        "Tam Sayılar": mat_tam,
+        "Tam Sayılar": mat_tam_sayilar,
         "Rasyonel Sayılar": mat_rasyonel,
         "Rasyonel İşlemler": mat_rasyonel_islem,
         "Cebirsel İfadeler": mat_cebirsel,
@@ -389,25 +420,41 @@ tum_dersler = {
         "Elektrik": fen_elektrik
     },
     "Türkçe": {
-        "Paragrafta Anlam": tur_paragraf,
-        "Sözcükte Anlam": tur_sozcuk
+        "Fiiller": tur_fiil,
+        "Zarflar": tur_zarf,
+        "Cümlede Anlam": tur_anlam,
+        "Paragraf": tur_paragraf,
+        "Yazım": tur_yazim,
+        "Noktalama": tur_noktalama,
+        "Sözcük": tur_sozcuk,
+        "Cümle Türleri": tur_cumle
     },
     "Sosyal Bilgiler": {
-        "Kültür ve Miras": sos_kultur
+        "İletişim": sos_iletisim,
+        "Tarih": sos_tarih,
+        "Nüfus": sos_nufus,
+        "Bilim": sos_bilim,
+        "Ekonomi": sos_ekonomi,
+        "Kültür": sos_kultur,
+        "Demokrasi": sos_demokrasi
     }
 }
 
 # ==================== SIDEBAR ====================
 with st.sidebar:
     st.markdown("### 📊 SKOR")
-    c1,c2 = st.columns(2)
-    c1.metric("✅ Doğru", st.session_state.dogru)
-    c2.metric("❌ Yanlış", st.session_state.yanlis)
+    col1, col2 = st.columns(2)
+    col1.metric("✅ Doğru", st.session_state.dogru)
+    col2.metric("❌ Yanlış", st.session_state.yanlis)
     st.metric("🏆 Puan", st.session_state.puan)
     st.markdown("---")
+    
+    # SIFIRLAMA BUTONU
     if st.button("🗑️ TÜM İSTATİSTİKLERİ SIFIRLA", use_container_width=True):
         sifirla()
+    
     st.markdown("---")
+    
     if st.session_state.secili_ders is None:
         sec_ders = st.selectbox("📚 Ders Seç", list(tum_dersler.keys()))
         if st.button("🚀 BAŞLA", use_container_width=True):
@@ -419,7 +466,7 @@ with st.sidebar:
         sec_konu = st.selectbox("📌 Konu Seç", konular)
         if st.button("🎲 YENİ SORU", use_container_width=True):
             fonk = tum_dersler[st.session_state.secili_ders][sec_konu]
-            m,d,s = fonk()
+            m, d, s = fonk()
             st.session_state.aktif_soru = m
             st.session_state.aktif_cevap = d
             st.session_state.aktif_siklar = s
@@ -440,6 +487,7 @@ else:
     for msg in st.session_state.mesajlar:
         with st.chat_message(msg["rol"]):
             st.markdown(msg["icerik"])
+    
     if st.session_state.aktif_soru:
         cevap = st.chat_input("Cevabını yaz (A, B, C, D):")
         if cevap:
