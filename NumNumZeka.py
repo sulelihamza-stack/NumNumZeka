@@ -52,7 +52,7 @@ def sifirla():
     st.session_state.secili_ders = None
     st.rerun()
 
-# ==================== MATEMATİK (her konu dinamik) ====================
+# ==================== MATEMATİK ====================
 def mat_tam_sayilar():
     tip = random.randint(1,12)
     if tip == 1:
@@ -151,11 +151,13 @@ def mat_rasyonel():
         d = str(yp + ypd)
         return f"{p}/{pd} kesrini {carp} ile genişletince pay+payda toplamı?", d, [str(int(d)+random.randint(5,20)), str(int(d)-random.randint(5,20)), str(int(d)+random.randint(1,4))]
     elif tip == 5:
-        p = random.randint(1,9); pd = random.randint(2,9)
-        m = f"{p}/{pd} kesrini {random.randint(2,5)} ile sadeleştirince pay ve paydanın farkı kaç olur?"
-        carp = random.randint(2,5); yp = p//carp; ypd = pd//carp if p%carp==0 and pd%carp==0 else p
-        d = str(abs(yp - ypd)) if p%carp==0 and pd%carp==0 else str(random.randint(1,5))
-        return m, d, [str(int(d)+random.randint(1,3)), str(int(d)-random.randint(1,3)), str(int(d)+random.randint(2,5))]
+        p = random.randint(2,9); pd = random.randint(2,9); carp = random.randint(2,4)
+        if p % carp == 0 and pd % carp == 0:
+            yp = p // carp; ypd = pd // carp
+            d = str(yp + ypd)
+        else:
+            d = str(random.randint(2,10))
+        return f"{p}/{pd} kesrini {carp} ile sadeleştirince pay ve payda toplamı?", d, [str(int(d)+random.randint(1,4)), str(int(d)-random.randint(1,4)), str(int(d)+random.randint(2,5))]
     else:
         p1 = random.randint(1,10); pd1 = random.randint(2,10); p2 = random.randint(1,10); pd2 = random.randint(2,10)
         fark = abs(p1/pd1 - p2/pd2)
@@ -238,19 +240,20 @@ def mat_yuzde():
     else: son = int(s * (100 - y) / 100); return f"{s} TL'lik ürüne %{y} indirim yapılırsa ödenecek tutar?", str(son), [str(son+random.randint(4,10)), str(son-random.randint(4,10)), str(son+random.randint(1,3))]
 
 def mat_aci():
-    a = random.randint(30,150)
     tip = random.choice(["tümler","bütünler","tümler_kat","bütünler_kat"])
     if tip == "tümler":
-        d = str(90-a)
+        a = random.randint(30,150)
+        d = str(90 - a)
         m = f"{a}°'nin tümleri?"
     elif tip == "bütünler":
-        d = str(180-a)
+        a = random.randint(30,150)
+        d = str(180 - a)
         m = f"{a}°'nin bütünleri?"
     elif tip == "tümler_kat":
         kat = random.randint(2,4)
         d = str(90 // (kat+1))
         m = f"Tümler açısı kendisinin {kat} katı olan açı kaç derecedir?"
-    else:  # bütünler_kat
+    else:
         kat = random.randint(2,4)
         d = str(180 // (kat+1))
         m = f"Bütünler açısı kendisinin {kat} katı olan açı kaç derecedir?"
@@ -293,8 +296,6 @@ def mat_veri():
         y = [str(med), str(ort), str(ac)]
     if tip != "mod":
         y = [str(int(d)+random.randint(2,6)), str(int(d)-random.randint(2,6)), str(int(d)+random.randint(1,2))]
-    else:
-        y = [str(med), str(ort), str(ac)]
     return m, d, y
 
 def mat_cisim():
@@ -306,7 +307,7 @@ def mat_cisim():
     elif c == "kare prizma": return "Kare prizmanın kaç ayrıtı vardır?", "12", ["8","10","12","14"]
     else: return "Koninin kaç yüzü vardır?", "2", ["1","2","3","4"]
 
-# ==================== FEN BİLİMLERİ (her konu 10+ tip) ====================
+# ==================== FEN BİLİMLERİ ====================
 def fen_gunes():
     tip = random.randint(1,10)
     if tip == 1: return "Güneş sisteminin en büyük gezegeni?", "Jüpiter", ["Mars","Satürn","Jüpiter","Uranüs"]
@@ -340,7 +341,7 @@ def fen_kuvvet():
         return f"Kütlesi {k} kg, hızı {v} m/s cismin kinetik enerjisi?", str(ke), [str(ke+10), str(ke-10), str(ke+20)]
     elif tip == 2: return "Potansiyel enerji nelere bağlıdır?", "Kütle ve yükseklik", ["Kütle ve hız","Kütle ve yükseklik","Hız ve yükseklik","Sadece kütle"]
     elif tip == 3: return "Bir cismin hareket durumunu değiştiren etki?", "Kuvvet", ["Enerji","Kuvvet","İş","Güç"]
-    elif tip == 4: return "Sürtünme kuvveti hangi yönde etki eder?", "Harekete zıt yönde", ["Hareket yönünde","Harekete zıt yönde","Dikey yönde","Yatay yönde"]
+    elif tip == 4: return "Sürtünme kuvveti hangi yönde?", "Harekete zıt yönde", ["Hareket yönünde","Harekete zıt yönde","Dikey","Yatay"]
     elif tip == 5:
         m = random.randint(2,10); h = random.randint(5,20); ep = m*10*h
         return f"{m} kg kütleli cisim {h} m yükseklikte potansiyel enerjisi (g=10)?", str(ep), [str(ep+20), str(ep-20), str(ep+50)]
@@ -404,10 +405,10 @@ def fen_elektrik():
     elif tip == 6: return "Direnç birimi?", "Ohm", ["Amper","Ohm","Volt","Watt"]
     elif tip == 7: return "Akım birimi?", "Amper", ["Amper","Ohm","Volt","Watt"]
     elif tip == 8: return "Ohm kanunu nedir?", "V = I.R", ["V = I/R","I = V.R","V = I.R","R = V.I"]
-    elif tip == 9: return "Bir devrede üç ampul seri bağlıysa biri patlarsa diğerleri?", "Sönmez?", ["Söner","Işık vermez","Parlar","Sönmez"]
+    elif tip == 9: return "Bir devrede üç ampul seri bağlıysa biri patlarsa diğerleri?", "Söner", ["Söner","Işık vermez","Parlar","Sönmez"]
     else: return "Üç ampul paralel bağlıysa biri patlarsa diğerleri?", "Işık vermeye devam eder", ["Söner","Işık vermeye devam eder","Parlaklığı azalır","Parlaklığı artar"]
 
-# ==================== TÜRKÇE (her konu 10+ tip) ====================
+# ==================== TÜRKÇE ====================
 def tur_anlam():
     sorular = [
         ("'Keşke daha çok çalışsaydım.' anlamı?", "pişmanlık", ["pişmanlık","özlem","kararlılık","şart"]),
@@ -485,8 +486,17 @@ def tur_paragraf():
 
 def tur_fiil():
     f = random.choice(["gelmek","gitmek","bakmak","yazmak","okumak","koşmak","söylemek","anlamak"])
-    d = f.replace("mek","").replace("mak","") + "yor"
-    return f"'{f}' fiilinin şimdiki zaman 2. tekil kişi çekimi?", d, [d, d+"m", d+"k", d+"n"]
+    kok = f.replace("mek","").replace("mak","")
+    # Basit ünlü uyumu
+    son_harf = kok[-1]
+    if son_harf in "aı": ek = "ı"
+    elif son_harf in "ei": ek = "i"
+    elif son_harf in "ou": ek = "u"
+    else: ek = "ü"
+    dogru = kok + ek + "yorsun"
+    s = [dogru, dogru.replace("yorsun","yor"), dogru.replace("yorsun","york"), dogru.replace("yorsun","yorn")]
+    random.shuffle(s)
+    return f"'{f}' fiilinin şimdiki zaman 2. tekil kişi çekimi?", dogru, s
 
 def tur_zarf():
     cumleler = [
@@ -509,7 +519,7 @@ def tur_cumle():
     ]
     return random.choice(sorular)
 
-# ==================== SOSYAL BİLGİLER (her konu 10+ tip) ====================
+# ==================== SOSYAL BİLGİLER ====================
 def sos_tarih():
     sorular = [
         ("İlk Türk devletlerinden biri?", "Asya Hun Devleti", ["Osmanlı","Asya Hun","Bizans","Roma"]),
