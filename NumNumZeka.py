@@ -490,7 +490,6 @@ def tur_paragraf():
 def tur_fiil():
     f = random.choice(["gelmek","gitmek","bakmak","yazmak","okumak","koşmak","söylemek","anlamak"])
     kok = f.replace("mek","").replace("mak","")
-    # Basit ünlü uyumu
     son_harf = kok[-1]
     if son_harf in "aı": ek = "ı"
     elif son_harf in "ei": ek = "i"
@@ -661,6 +660,9 @@ with st.sidebar:
         if st.button("🎲 YENİ SORU", use_container_width=True):
             fonk = tum_dersler[st.session_state.secili_ders][sec_konu]
             m, d, s = fonk()
+            # Şıkların 4 elemanlı olduğundan emin ol
+            while len(s) < 4:
+                s.append(str(random.randint(1,100)))
             st.session_state.aktif_soru = m
             st.session_state.aktif_cevap = d
             st.session_state.aktif_siklar = s
