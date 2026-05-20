@@ -238,14 +238,21 @@ def mat_yuzde():
     else: son = int(s * (100 - y) / 100); return f"{s} TL'lik ürüne %{y} indirim yapılırsa ödenecek tutar?", str(son), [str(son+random.randint(4,10)), str(son-random.randint(4,10)), str(son+random.randint(1,3))]
 
 def mat_aci():
-    a = random.randint(30,150); tip = random.choice(["tümler","bütünler","tümler_kat","bütünler_kat"])
-    if tip == "tümler": d = str(90-a); m = f"{a}°'nin tümleri?"
-    elif tip == "bütünler": d = str(180-a); m = f"{a}°'nin bütünleri?"
-    elif tip == "tümler_kat": a = random.randint(20,40); kat = random.randint(2,4); d = str(a); m = f"Tümler açısı kendisinin {kat} katı olan açı kaç derecedir?"
-        # çözüm: x + (kat*x) = 90 -> x = 90/(kat+1)
+    a = random.randint(30,150)
+    tip = random.choice(["tümler","bütünler","tümler_kat","bütünler_kat"])
+    if tip == "tümler":
+        d = str(90-a)
+        m = f"{a}°'nin tümleri?"
+    elif tip == "bütünler":
+        d = str(180-a)
+        m = f"{a}°'nin bütünleri?"
+    elif tip == "tümler_kat":
+        kat = random.randint(2,4)
         d = str(90 // (kat+1))
-    else:
-        a = random.randint(30,70); kat = random.randint(2,4); d = str(180 // (kat+1))
+        m = f"Tümler açısı kendisinin {kat} katı olan açı kaç derecedir?"
+    else:  # bütünler_kat
+        kat = random.randint(2,4)
+        d = str(180 // (kat+1))
         m = f"Bütünler açısı kendisinin {kat} katı olan açı kaç derecedir?"
     y = [str(int(d)+random.randint(5,15)), str(int(d)-random.randint(5,15)), str(int(d)+random.randint(1,4))]
     return m, d, y
