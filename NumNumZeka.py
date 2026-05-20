@@ -23,7 +23,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 st.title("🎯 NumNum Zeka - 7. Sınıf (LGS Hazırlık)")
-st.markdown("**Tüm konularda 10+ farklı soru tipi – sonsuz çeşitlilik**")
+st.markdown("**Her konuda 10+ farklı soru tipi – sonsuz çeşitlilik**")
 
 # ========== OTURUM ==========
 if "mesajlar" not in st.session_state:
@@ -52,7 +52,7 @@ def sifirla():
     st.session_state.secili_ders = None
     st.rerun()
 
-# ==================== MATEMATİK ====================
+# -------------------- MATEMATİK --------------------
 def mat_tam_sayilar():
     tip = random.randint(1,12)
     if tip == 1:
@@ -96,9 +96,9 @@ def mat_tam_sayilar():
         m = f"{d_s+y_s} soruluk sınav: {d_s} doğru (+{d_p}), {y_s} yanlış ({y_p}). Toplam puan?"
         d = str(toplam)
     elif tip == 8:
-        a = random.randint(-30,30); b = random.randint(-30,30); c = random.randint(2,5); d = random.randint(-30,30)
-        son = a + (b*c) - d
-        m = f"{a} + {b} × {c} - {d} = ? (işlem önceliğine dikkat)"
+        a = random.randint(-30,30); b = random.randint(-30,30); c = random.randint(2,5); e = random.randint(-30,30)
+        son = a + (b*c) - e
+        m = f"{a} + {b} × {c} - {e} = ? (işlem önceliğine dikkat)"
         d = str(son)
     elif tip == 9:
         x = random.randint(-40,40); y = random.randint(-40,40)
@@ -129,7 +129,8 @@ def mat_tam_sayilar():
 def mat_rasyonel():
     tip = random.randint(1,6)
     if tip == 1:
-        p1 = random.randint(1,12); pd1 = random.randint(2,12); p2 = random.randint(1,12); pd2 = random.randint(2,12)
+        p1 = random.randint(1,12); pd1 = random.randint(2,12)
+        p2 = random.randint(1,12); pd2 = random.randint(2,12)
         if p1/pd1 > p2/pd2: d = ">"; y = ["<","=","≠"]
         elif p1/pd1 < p2/pd2: d = "<"; y = [">","=","≠"]
         else: d = "="; y = [">","<","≠"]
@@ -159,13 +160,15 @@ def mat_rasyonel():
             d = str(random.randint(2,10))
         return f"{p}/{pd} kesrini {carp} ile sadeleştirince pay ve payda toplamı?", d, [str(int(d)+random.randint(1,4)), str(int(d)-random.randint(1,4)), str(int(d)+random.randint(2,5))]
     else:
-        p1 = random.randint(1,10); pd1 = random.randint(2,10); p2 = random.randint(1,10); pd2 = random.randint(2,10)
+        p1 = random.randint(1,10); pd1 = random.randint(2,10)
+        p2 = random.randint(1,10); pd2 = random.randint(2,10)
         fark = abs(p1/pd1 - p2/pd2)
         d = f"{fark:.2f}"
         return f"{p1}/{pd1} ile {p2}/{pd2} arasındaki fark (yaklaşık)?", d, [f"{fark+0.1:.2f}", f"{fark-0.1:.2f}", f"{fark+0.05:.2f}"]
 
 def mat_rasyonel_islem():
-    p1 = random.randint(1,8); pd1 = random.randint(2,8); p2 = random.randint(1,8); pd2 = random.randint(2,8)
+    p1 = random.randint(1,8); pd1 = random.randint(2,8)
+    p2 = random.randint(1,8); pd2 = random.randint(2,8)
     islem = random.choice(["+","-","x","/"])
     if islem == "+": sp = p1*pd2 + p2*pd1; spd = pd1*pd2
     elif islem == "-": sp = p1*pd2 - p2*pd1; spd = pd1*pd2
@@ -307,7 +310,7 @@ def mat_cisim():
     elif c == "kare prizma": return "Kare prizmanın kaç ayrıtı vardır?", "12", ["8","10","12","14"]
     else: return "Koninin kaç yüzü vardır?", "2", ["1","2","3","4"]
 
-# ==================== FEN BİLİMLERİ ====================
+# -------------------- FEN BİLİMLERİ --------------------
 def fen_gunes():
     tip = random.randint(1,10)
     if tip == 1: return "Güneş sisteminin en büyük gezegeni?", "Jüpiter", ["Mars","Satürn","Jüpiter","Uranüs"]
@@ -408,7 +411,7 @@ def fen_elektrik():
     elif tip == 9: return "Bir devrede üç ampul seri bağlıysa biri patlarsa diğerleri?", "Söner", ["Söner","Işık vermez","Parlar","Sönmez"]
     else: return "Üç ampul paralel bağlıysa biri patlarsa diğerleri?", "Işık vermeye devam eder", ["Söner","Işık vermeye devam eder","Parlaklığı azalır","Parlaklığı artar"]
 
-# ==================== TÜRKÇE ====================
+# -------------------- TÜRKÇE --------------------
 def tur_anlam():
     sorular = [
         ("'Keşke daha çok çalışsaydım.' anlamı?", "pişmanlık", ["pişmanlık","özlem","kararlılık","şart"]),
@@ -519,7 +522,7 @@ def tur_cumle():
     ]
     return random.choice(sorular)
 
-# ==================== SOSYAL BİLGİLER ====================
+# -------------------- SOSYAL BİLGİLER --------------------
 def sos_tarih():
     sorular = [
         ("İlk Türk devletlerinden biri?", "Asya Hun Devleti", ["Osmanlı","Asya Hun","Bizans","Roma"]),
@@ -589,7 +592,7 @@ def sos_demokrasi():
     elif tip == 5: return "Çoğulculuk nedir?", "Farklı düşüncelere saygı", ["Tek düşünce","Farklı düşüncelere saygı","Zorunlu birlik","Ortak karar"]
     else: return "Seçimlerin serbest ve adil olması neden önemlidir?", "Halkın iradesinin yansıması", ["Yöneticilerin işi","Halkın iradesinin yansıması","Uluslararası baskı","Gelenek"]
 
-# ==================== DERS ve KONU SÖZLÜĞÜ ====================
+# -------------------- DERS ve KONU SÖZLÜĞÜ --------------------
 tum_dersler = {
     "Matematik": {
         "Tam Sayılar": mat_tam_sayilar,
@@ -635,7 +638,7 @@ tum_dersler = {
     }
 }
 
-# ==================== SIDEBAR ====================
+# -------------------- SIDEBAR --------------------
 with st.sidebar:
     st.markdown("### 📊 SKOR")
     c1, c2 = st.columns(2)
@@ -672,7 +675,7 @@ with st.sidebar:
             st.session_state.mesajlar = []
             st.rerun()
 
-# ==================== ANA ALAN ====================
+# -------------------- ANA ALAN --------------------
 if st.session_state.secili_ders is None:
     st.info("🎓 **Başlamak için sol panelden ders ve konu seçin!**")
 else:
